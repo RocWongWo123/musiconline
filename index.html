@@ -100,9 +100,10 @@
                     console.error('Error loading audio:', error);
                 });
 
-            setInterval(function() {
+            // Update remaining time only once after scheduled time
+            setTimeout(function() {
                 updateRemainingTime(playDate);
-            }, 1000); // Update remaining time every second
+            }, timeUntilPlay); // Update remaining time after scheduled time
         }
     </script>
 </body>

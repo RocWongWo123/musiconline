@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,7 +17,6 @@
 
     <script>
         var audio = new Audio('https://music-1324776070.cos.ap-nanjing.myqcloud.com/%E8%94%A1%E7%90%B4%20-%20%E6%B8%A1%E5%8F%A3.flac'); // 更换成您的音乐文件路径
-        var clientServerTimeDifference = 0; // 客户端和服务器时间的差异
 
         function playMusic() {
             audio.play();
@@ -36,10 +34,7 @@
             return fetch('https://worldtimeapi.org/api/timezone/Asia/Shanghai')
                 .then(response => response.json())
                 .then(data => {
-                    var serverTime = new Date(data.utc_datetime);
-                    var clientTime = new Date();
-                    clientServerTimeDifference = serverTime - clientTime;
-                    return serverTime;
+                    return new Date(data.utc_datetime);
                 })
                 .catch(error => {
                     console.error('Error fetching Beijing time:', error);
@@ -51,8 +46,7 @@
             fetchBeijingTime()
                 .then(beijingTime => {
                     if (beijingTime) {
-                        var correctedTime = new Date(Date.now() + clientServerTimeDifference);
-                        document.getElementById('currentTime').textContent = "当前时间：" + correctedTime.toLocaleString();
+                        document.getElementById('currentTime').textContent = "当前时间：" + beijingTime.toLocaleString();
                     }
                 });
         }, 1000); // Update current time every second
@@ -61,7 +55,7 @@
             fetchBeijingTime()
                 .then(beijingTime => {
                     if (beijingTime) {
-                        var now = new Date(Date.now() + clientServerTimeDifference);
+                        var now = beijingTime;
 
                         var timeUntilTarget = playDate - now;
 
@@ -85,7 +79,25 @@
 
             updateRemainingTime(playDate);
 
-            setTimeout(playMusic, playDate - new Date(Date.now() + clientServerTimeDifference));
+            // Calculate the time until the scheduled play
+            var timeUntilPlay = playDate - new Date();
+
+            // Synchronize with WebRTC to play the audio precisely at the scheduled time
+            var rtcPeerConnection = new RTCPeerConnection();
+
+            rtcPeerConnection.onicecandidate = function(event) {
+                if (event.candidate) return;
+                var currentTime = new Date();
+                var timeToStart = playDate - currentTime;
+                setTimeout(playMusic, timeToStart);
+            };
+
+            rtcPeerConnection.createDataChannel('');
+
+            rtcPeerConnection.createOffer()
+                .then(offer => rtcPeerConnection.setLocalDescription(offer))
+                .catch(console.error);
+
             setInterval(function() {
                 updateRemainingTime(playDate);
             }, 1000); // Update remaining time every second

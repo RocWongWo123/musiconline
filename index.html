@@ -30,45 +30,59 @@
             return hours + ":" + minutes + ":" + seconds;
         }
 
+        function fetchBeijingTime() {
+            return fetch('https://worldtimeapi.org/api/timezone/Asia/Shanghai')
+                .then(response => response.json())
+                .then(data => {
+                    return new Date(data.utc_datetime);
+                })
+                .catch(error => {
+                    console.error('Error fetching Beijing time:', error);
+                    return null;
+                });
+        }
+
         setInterval(function() {
-            document.getElementById('currentTime').textContent = "当前时间：" + getCurrentTime();
+            fetchBeijingTime()
+                .then(beijingTime => {
+                    if (beijingTime) {
+                        document.getElementById('currentTime').textContent = "当前时间：" + beijingTime.toLocaleString();
+                    }
+                });
         }, 1000); // Update current time every second
 
-        function updateRemainingTime() {
-            var playDateInput = document.getElementById('playDate');
-            var playDate = new Date(playDateInput.value);
-            var now = new Date();
+        function updateRemainingTime(playDate) {
+            fetchBeijingTime()
+                .then(beijingTime => {
+                    if (beijingTime) {
+                        var now = beijingTime;
 
-            var timeUntilTarget = playDate - now;
+                        var timeUntilTarget = playDate - now;
 
-            if (timeUntilTarget <= 0) {
-                document.getElementById('remainingTime').textContent = "请选择一个将来的日期和时间！";
-                return;
-            }
+                        if (timeUntilTarget <= 0) {
+                            document.getElementById('remainingTime').textContent = "请选择一个将来的日期和时间！";
+                            return;
+                        }
 
-            var hoursLeft = Math.floor(timeUntilTarget / (1000 * 60 * 60));
-            var minutesLeft = Math.floor((timeUntilTarget % (1000 * 60 * 60)) / (1000 * 60));
-            var secondsLeft = Math.floor((timeUntilTarget % (1000 * 60)) / 1000);
+                        var hoursLeft = Math.floor(timeUntilTarget / (1000 * 60 * 60));
+                        var minutesLeft = Math.floor((timeUntilTarget % (1000 * 60 * 60)) / (1000 * 60));
+                        var secondsLeft = Math.floor((timeUntilTarget % (1000 * 60)) / 1000);
 
-            document.getElementById('remainingTime').textContent = "剩余播放时间：" + hoursLeft + " 小时 " + minutesLeft + " 分钟 " + secondsLeft + " 秒";
+                        document.getElementById('remainingTime').textContent = "剩余播放时间：" + hoursLeft + " 小时 " + minutesLeft + " 分钟 " + secondsLeft + " 秒";
+                    }
+                });
         }
 
         function schedulePlay() {
             var playDateInput = document.getElementById('playDate');
             var playDate = new Date(playDateInput.value);
-            var now = new Date();
 
-            var timeUntilTarget = playDate - now;
+            updateRemainingTime(playDate);
 
-            if (timeUntilTarget <= 0) {
-                alert("请选择一个将来的日期和时间！");
-                return;
-            }
-
-            updateRemainingTime();
-
-            setTimeout(playMusic, timeUntilTarget);
-            setInterval(updateRemainingTime, 1000); // Update remaining time every second
+            setTimeout(playMusic, playDate - new Date());
+            setInterval(function() {
+                updateRemainingTime(playDate);
+            }, 1000); // Update remaining time every second
         }
     </script>
 </body>

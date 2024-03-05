@@ -82,21 +82,23 @@
             // Calculate the time until the scheduled play
             var timeUntilPlay = playDate - new Date();
 
-            // Synchronize with WebRTC to play the audio precisely at the scheduled time
-            var rtcPeerConnection = new RTCPeerConnection();
+            // Use Web Audio API for more precise timing
+            var context = new AudioContext();
+            var source = context.createBufferSource();
+            var buffer = null;
 
-            rtcPeerConnection.onicecandidate = function(event) {
-                if (event.candidate) return;
-                var currentTime = new Date();
-                var timeToStart = playDate - currentTime;
-                setTimeout(playMusic, timeToStart);
-            };
-
-            rtcPeerConnection.createDataChannel('');
-
-            rtcPeerConnection.createOffer()
-                .then(offer => rtcPeerConnection.setLocalDescription(offer))
-                .catch(console.error);
+            fetch(audio.src)
+                .then(response => response.arrayBuffer())
+                .then(data => context.decodeAudioData(data))
+                .then(decodedData => {
+                    buffer = decodedData;
+                    source.buffer = buffer;
+                    source.connect(context.destination);
+                    source.start(context.currentTime + timeUntilPlay / 1000);
+                })
+                .catch(error => {
+                    console.error('Error loading audio:', error);
+                });
 
             setInterval(function() {
                 updateRemainingTime(playDate);

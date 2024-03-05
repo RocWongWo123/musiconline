@@ -17,9 +17,13 @@
 
     <script>
         var audio = new Audio('https://music-1324776070.cos.ap-nanjing.myqcloud.com/%E8%94%A1%E7%90%B4%20-%20%E6%B8%A1%E5%8F%A3.flac'); // 更换成您的音乐文件路径
+        var context = new AudioContext();
+        var source = context.createBufferSource();
+        var buffer = null;
+        var startTime = 0;
 
         function playMusic() {
-            audio.play();
+            source.start(0, startTime);
         }
 
         function getCurrentTime() {
@@ -82,11 +86,6 @@
             // Calculate the time until the scheduled play
             var timeUntilPlay = playDate - new Date();
 
-            // Use Web Audio API for more precise timing
-            var context = new AudioContext();
-            var source = context.createBufferSource();
-            var buffer = null;
-
             fetch(audio.src)
                 .then(response => response.arrayBuffer())
                 .then(data => context.decodeAudioData(data))
@@ -94,7 +93,7 @@
                     buffer = decodedData;
                     source.buffer = buffer;
                     source.connect(context.destination);
-                    source.start(context.currentTime + timeUntilPlay / 1000);
+                    startTime = context.currentTime + (timeUntilPlay / 1000); // Adjust start time based on the remaining time
                 })
                 .catch(error => {
                     console.error('Error loading audio:', error);
@@ -105,6 +104,14 @@
                 updateRemainingTime(playDate);
             }, timeUntilPlay); // Update remaining time after scheduled time
         }
+
+        // Real-time playback correction
+        setInterval(function() {
+            if (source.buffer && source.playbackState === source.PLAYING_STATE) {
+                var difference = context.currentTime - startTime;
+                startTime += difference * 0.01; // Adjust the start time to correct the playback
+            }
+        }, 100); // Check and correct every 100 milliseconds
     </script>
 </body>
 </html>

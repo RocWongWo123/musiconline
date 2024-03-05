@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定时播放音乐</title>
+</head>
+<body>
+    <h1>定时播放音乐</h1>
+
+    <label for="playDate">选择播放日期和时间:</label>
+    <input type="datetime-local" id="playDate" name="playDate">
+    <button onclick="schedulePlay()">开始播放</button>
+    <button onclick="playMusic()">立即播放</button>
+
+    <script>
+        var audio = new Audio('https://music-1324776070.cos.ap-nanjing.myqcloud.com/%E8%94%A1%E7%90%B4%20-%20%E6%B8%A1%E5%8F%A3.flac'); // 更换成您的音乐文件路径
+
+        function playMusic() {
+            audio.play();
+        }
+
+        function schedulePlay() {
+            var playDateInput = document.getElementById('playDate');
+            var playDate = new Date(playDateInput.value);
+            var now = new Date();
+            var timeUntilTarget = playDate - now;
+
+            if (timeUntilTarget < 0) {
+                alert("请选择一个将来的日期和时间！");
+                return;
+            }
+
+            setTimeout(playMusic, timeUntilTarget);
+        }
+    </script>
+</body>
+</html>
